@@ -98,7 +98,8 @@ namespace Majorsilence.Reporting.Rdl
 						if (t.KeepWithNext > 0 && run > t.KeepWithNext)
 							run = Math.Max(hrows, t.KeepWithNext);
 						bool keepRun = run > hrows && run < pgs.BottomOfPage / 2;
-					float height = p.YOffset + (keepRun ? run : hrows);
+					float fit = t.FitHeight > 0 ? Math.Min(hrows, t.FitHeight) : hrows;
+						float height = p.YOffset + (keepRun ? run : fit);
 					if (height > pgs.BottomOfPage)
 					{
 						p = OwnerTable.RunPageNew(pgs, p);
