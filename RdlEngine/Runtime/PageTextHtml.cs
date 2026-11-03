@@ -149,9 +149,9 @@ namespace Majorsilence.Reporting.Rdl
 						ms = this.MeasureString(pt.Text, pt.SI, g, out descent);
 						maxDescent = Math.Max(maxDescent, descent);
 						pt.W = ms.Width;
-						pt.H = ms.Height;
+						pt.H = Math.Max(ms.Height, pt.SI.LineHeight);	// a taller line pitch leaves the text at the top of its line
 						pt.Descent = descent;
-						maxLineHeight = Math.Max(maxLineHeight, ms.Height);
+						maxLineHeight = Math.Max(maxLineHeight, Math.Max(ms.Height, pt.SI.LineHeight));
 						lineXPos = xPos;
 					}
 					// Now reset the styleinfo
@@ -379,7 +379,7 @@ namespace Majorsilence.Reporting.Rdl
 						sb.Append(ntoken);
 
 						maxDescent = Math.Max(maxDescent, descent);
-						maxLineHeight = Math.Max(maxLineHeight, ms.Height);
+						maxLineHeight = Math.Max(maxLineHeight, Math.Max(ms.Height, CurrentStyle(si).LineHeight));
 						xPos += ms.Width;
 						continue;
 					}
@@ -400,14 +400,14 @@ namespace Majorsilence.Reporting.Rdl
 				ms = this.MeasureString(pt.Text, pt.SI, g, out descent);
 				pt.X = this.X + lineXPos;
 				pt.Y = this.Y + yPos;
-				pt.H = ms.Height;
+				pt.H = Math.Max(ms.Height, pt.SI.LineHeight);	// a taller line pitch leaves the text at the top of its line
 				pt.W = ms.Width; 
 				pt.Descent = descent;
 				pt.CanGrow = false;
 				_items.Add(pt);
 				lineItems.Add(pt);
 				maxDescent = Math.Max(maxDescent, descent);
-				maxLineHeight = Math.Max(maxLineHeight, ms.Height);
+				maxLineHeight = Math.Max(maxLineHeight, Math.Max(ms.Height, pt.SI.LineHeight));
 				yPos += maxLineHeight;	// Increment y position
 				NormalizeLineHeight(lineItems, maxLineHeight, maxDescent);
 				lineXPos = maxLineHeight = maxDescent = 0;	// start line height over
