@@ -27,6 +27,8 @@ namespace Majorsilence.Reporting.Rdl
     public class PageTextHtml : PageText, IEnumerable, ICloneable
 	{
 		List<PageItem> _items=null;
+		string _blockAlign=null;		// CrystalEngine: the align of the <div> being built, "right" or "center" shifts its lines
+		float _lineWidth;			// CrystalEngine: the width a line is aligned within
 		Stack _StyleStack;				// work variable when processing styles
 		float _TotalHeight=0;
 		public PageTextHtml(string t) : base(t)
@@ -100,6 +102,7 @@ namespace Majorsilence.Reporting.Rdl
 			List<string> tokens = hl.Lex();
 
 			float textWidth = this.W - this.SI.PaddingLeft - this.SI.PaddingRight;	// CrystalEngine: pt's padding was zeroed above, so it never narrowed the lines
+			_lineWidth = textWidth;
 			// Now set the default style for the rest of the members
 			StyleInfo si = this.SI.Clone() as StyleInfo;
 			si.BStyleBottom = si.BStyleLeft = si.BStyleRight = si.BStyleTop = BorderStyleEnum.None;
@@ -219,6 +222,24 @@ namespace Majorsilence.Reporting.Rdl
 						}
 						float h = this.SI.FontSize * inc;
 						cs.FontSize = h;
+					}
+					else if (ltoken.StartsWith("<div"))
+					{	// CrystalEngine: a block; its lines are aligned by its align attribute
+						yPos += maxLineHeight;
+						NormalizeLineHeight(lineItems, maxLineHeight, maxDescent);
+						maxLineHeight = xPos = lineXPos = maxDescent = 0;
+						bFirstInLine = true;
+						bWhiteSpace = false;
+						_blockAlign = ((string)ParseHtmlCmd(token.Substring(1))["align"])?.ToLowerInvariant();
+					}
+					else if (ltoken == "</div>")
+					{
+						yPos += maxLineHeight;
+						NormalizeLineHeight(lineItems, maxLineHeight, maxDescent);
+						maxLineHeight = xPos = lineXPos = maxDescent = 0;
+						bFirstInLine = true;
+						bWhiteSpace = false;
+						_blockAlign = null;
 					}
 					else if (ltoken.StartsWith("<br"))
 					{
@@ -727,6 +748,18 @@ namespace Majorsilence.Reporting.Rdl
 
 		private void NormalizeLineHeight(List<PageItem> lineItems, float maxLineHeight, float maxDescent)
 		{
+			if ((_blockAlign == "right" || _blockAlign == "center") && lineItems.Count > 0)
+			{	// CrystalEngine: the line ends at the right edge (or is centred) within the text width
+				float right = 0;
+				foreach (PageItem pi in lineItems)
+					right = Math.Max(right, pi.X + pi.W - this.X);
+				float shift = _lineWidth - right;
+				if (_blockAlign == "center")
+					shift /= 2;
+				if (shift > 0)
+					foreach (PageItem pi in lineItems)
+						pi.X += shift;
+			}
 			foreach (PageItem pi in lineItems)
 			{
 				if (pi is PageText)
