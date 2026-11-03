@@ -809,6 +809,10 @@ namespace Majorsilence.Reporting.Rdl
 			return ht;
 		}
 
+		/// <summary>CrystalEngine: the width in points of a string in a family, from the font file the PDF is drawn with, or
+		/// null for a family it does not know. GDI measures Franklin Gothic Medium 13% wider than that file's advances.</summary>
+		public static Func<string, bool, bool, float, string, float?> TextWidthProvider;
+
 		private System.Drawing.SizeF MeasureString(string s, StyleInfo si, Draw.Graphics g, out float descent)
 		{
 			Draw.Font drawFont=null;
@@ -863,7 +867,12 @@ namespace Majorsilence.Reporting.Rdl
 				System.Drawing.RectangleF mr = rs[0].GetBounds(g);
 
 				ms.Height = RSize.PointsFromPixels(g, mr.Height);	// convert to points from pixels
-				ms.Width = RSize.PointsFromPixels(g, mr.Width);		// convert to points from pixels
+				ms.Width = RSize.PointsFromPixels(g, mr.Width);
+				if (TextWidthProvider != null)
+				{
+					float? exact = TextWidthProvider(si.FontFamily, (fs & Draw.FontStyle.Bold) != 0, (fs & Draw.FontStyle.Italic) != 0, si.FontSize, s);
+					if (exact.HasValue) ms.Width = exact.Value;
+				}		// convert to points from pixels
 				return ms;
 			}
 			finally
