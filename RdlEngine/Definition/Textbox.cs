@@ -306,7 +306,8 @@ namespace Majorsilence.Reporting.Rdl
                 }
             }
 
-			SetPagePositionEnd(pgs, pt.Y+pt.H);
+			// CrystalEngine: a hidden item is never added to the page, which is what turns its Y into a position on it
+			SetPagePositionEnd(pgs, pt.Y+pt.H + (bHidden ? pgs.CurrentPage.YOffset : 0));
 			if (pth != null)
 				pth.Reset();
 			if (this.CanGrow && !await Value.IsConstant())
