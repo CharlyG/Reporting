@@ -11,7 +11,8 @@
     TFM - net48 included - gets RELEASE_DRAWINGCOMPAT, and $(DefineConstants.Contains(DRAWINGCOMPAT))
     is therefore true even where DRAWINGCOMPAT itself is not defined.
   -->
-  <PropertyGroup Condition="('$(Configuration)' == 'Release-DrawingCompat' Or '$(Configuration)' == 'Debug-DrawingCompat' Or '$(OS)' != 'Windows_NT') And '$(TargetFramework)' != 'net48'">
+  <!-- CrystalEngine: always the SkiaSharp (DrawingCompat) build, in every configuration, so a ProjectReference needs no -DrawingCompat configuration. -->
+  <PropertyGroup Condition="'$(TargetFramework)' != 'net48'">
     <DrawingCompat>true</DrawingCompat>
     <DefineConstants>DRAWINGCOMPAT</DefineConstants>
   </PropertyGroup>
