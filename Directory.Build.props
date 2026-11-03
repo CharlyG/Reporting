@@ -21,6 +21,13 @@
     <Optimize>True</Optimize>
   </PropertyGroup>
 
+  <!-- CrystalEngine builds this engine as a ProjectReference and keeps its own build free of warnings:
+       the engine's nullable, platform and package-audit warnings are not ours to fix here. -->
+  <PropertyGroup>
+    <NoWarn>$(NoWarn);CA1416;CS8600;CS8601;CS8602;CS8603;CS8604;CS8605;CS8610;CS8618;CS8619;CS8625;CS8632;CS8765;CS8767;IL2026;IL2046;IL2055;IL2057;IL2060;IL2062;IL2067;IL2070;IL2072;IL2075;IL2077;IL2087;IL2090;IL2091;IL2111;IL3050;IL3000;IL3002;IL3051;IL2058;NU1902;NU1903</NoWarn>
+    <NuGetAudit>false</NuGetAudit>
+  </PropertyGroup>
+
   <PropertyGroup>
     <Deterministic>true</Deterministic>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>

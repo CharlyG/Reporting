@@ -83,17 +83,28 @@ namespace Majorsilence.Reporting.Rdl
 		{
 			if (bCheckRows)
 			{	// we need to check to see if a row will fit on the page
-				foreach (TableRow t in _Items)
+				for (int i = 0; i < _Items.Count; i++)
 				{
+					TableRow t = _Items[i];
 					Page p = pgs.CurrentPage;			// this can change after running a row
 					float hrows = await t.HeightOfRow(pgs, row);	// height of this row
-					float height = p.YOffset + hrows;
+					// CrystalEngine: a row flagged KeepWithNext moves to the next page together with the rows
+					// after it, up to and including the first row that is not flagged, when the run does not
+					// fit as a whole. A run taller than half the page is left to split.
+					float run = hrows;
+					for (int j = i; j < _Items.Count - 1 && _Items[j].KeepWithNext > 0; j++)
+						run += await _Items[j + 1].HeightOfRow(pgs, row);
+					// Held to the height the section was designed at, which the file gives.
+						if (t.KeepWithNext > 0 && run > t.KeepWithNext)
+							run = Math.Max(hrows, t.KeepWithNext);
+						bool keepRun = run > hrows && run < pgs.BottomOfPage / 2;
+					float height = p.YOffset + (keepRun ? run : hrows);
 					if (height > pgs.BottomOfPage)
 					{
 						p = OwnerTable.RunPageNew(pgs, p);
-                        await OwnerTable.RunPageHeader(pgs, row, false, null);
+						await OwnerTable.RunPageHeader(pgs, row, false, null);
 					}
-                    await t.RunPage(pgs, row);
+					await t.RunPage(pgs, row);
 				}
 			}
 			else

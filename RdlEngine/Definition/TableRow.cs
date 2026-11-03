@@ -29,6 +29,7 @@ namespace Majorsilence.Reporting.Rdl
 		bool _CanGrow;			// indicates that row height can increase in size
 		bool _CanShrink;		// indicates that row height can decrease in size
 		List<Textbox> _GrowList;	// list of TextBox's that need to be checked for growth
+		float _KeepWithNext;		// CrystalEngine: this row stays on the same page as the row after it; the height in points the run is held to
 
 		internal TableRow(ReportDefn r, ReportLink p, XmlNode xNode) : base(r, p)
 		{
@@ -54,6 +55,14 @@ namespace Majorsilence.Reporting.Rdl
 						break;
 					case "Visibility":
 						_Visibility = new Visibility(r, this, xNodeLoop);
+						break;
+					case "KeepWithNext":
+						{
+							string kwn = xNodeLoop.InnerText.Trim();
+							float kh;
+							_KeepWithNext = kwn.Equals("true", StringComparison.OrdinalIgnoreCase) ? float.MaxValue
+								: float.TryParse(kwn, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out kh) ? kh : 0;
+						}
 						break;
 					default:
 						// don't know this element - log it
@@ -123,6 +132,11 @@ namespace Majorsilence.Reporting.Rdl
 		{
 			get { return  _TableCells; }
 			set {  _TableCells = value; }
+		}
+
+		internal float KeepWithNext
+		{
+			get { return _KeepWithNext; }
 		}
 
 		internal RSize Height
