@@ -99,7 +99,7 @@ namespace Majorsilence.Reporting.Rdl
 			PageTextHtmlLexer hl = new PageTextHtmlLexer(this.Text);
 			List<string> tokens = hl.Lex();
 
-			float textWidth = this.W - pt.SI.PaddingLeft - pt.SI.PaddingRight;
+			float textWidth = this.W - this.SI.PaddingLeft - this.SI.PaddingRight;	// CrystalEngine: pt's padding was zeroed above, so it never narrowed the lines
 			// Now set the default style for the rest of the members
 			StyleInfo si = this.SI.Clone() as StyleInfo;
 			si.BStyleBottom = si.BStyleLeft = si.BStyleRight = si.BStyleTop = BorderStyleEnum.None;
