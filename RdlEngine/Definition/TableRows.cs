@@ -83,6 +83,7 @@ namespace Majorsilence.Reporting.Rdl
 		{
 			if (bCheckRows)
 			{	// we need to check to see if a row will fit on the page
+				float carry = 0;
 				for (int i = 0; i < _Items.Count; i++)
 				{
 					TableRow t = _Items[i];
@@ -104,8 +105,14 @@ namespace Majorsilence.Reporting.Rdl
 					{
 						p = OwnerTable.RunPageNew(pgs, p);
 						await OwnerTable.RunPageHeader(pgs, row, false, null);
+						// CrystalEngine: the part of the last row, fitted by where its objects end, that ran
+						// past the foot of the page is the first thing on this one.
+						p.YOffset += carry;
 					}
+					carry = 0;
 					await t.RunPage(pgs, row);
+					if (fit < hrows && pgs.CurrentPage.YOffset > pgs.BottomOfPage)
+						carry = pgs.CurrentPage.YOffset - pgs.BottomOfPage;
 				}
 			}
 			else
