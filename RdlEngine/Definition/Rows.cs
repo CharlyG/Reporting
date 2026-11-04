@@ -17,6 +17,7 @@ namespace Majorsilence.Reporting.Rdl
         List<RowsSortExpression> _SortBy;	// array of expressions used to sort the data
 		GroupEntry[] _CurrentGroups;	// group
 		Report _Rpt;
+		Dictionary<Row, int[]> _FirstSeen;	// CrystalEngine: per row, the rank of each original-order group key
 
 		internal Rows(Report rpt)
 		{
@@ -102,7 +103,9 @@ namespace Majorsilence.Reporting.Rdl
 				{
 					foreach(GroupExpression ge in t.Grouping.GroupExpressions.Items)
 					{
-						_SortBy.Add(new RowsSortExpression(ge.Expression));
+						// CrystalEngine: a group written without <Sorting> is Crystal's "original order" -
+						// its groups come in the order their first row appears, not in key order.
+						_SortBy.Add(new RowsSortExpression(ge.Expression) { original = t.Sorting == null });
 					}
 					// TODO what to do with the sort expressions!!!!
 				}
@@ -143,8 +146,44 @@ namespace Majorsilence.Reporting.Rdl
 
 		internal void Sort()
 		{
+			PrepareOriginalOrder();
 			// sort the data array by the data.
 			_Data.Sort(this);
+		}
+
+		// CrystalEngine: ranks each row's group keys by first appearance, for groups kept in original order.
+		// A key is the values of every sort level down to it, so an inner group is ranked within its parent.
+		void PrepareOriginalOrder()
+		{
+			_FirstSeen = null;
+			if (_SortBy == null || !_SortBy.Exists(sb => sb.original))
+				return;
+			var maps = new Dictionary<string, int>[_SortBy.Count];
+			var seen = new Dictionary<Row, int[]>();
+			var ordered = new List<Row>(_Data);
+			ordered.Sort((a, b) => a.RowNumber - b.RowNumber);
+			foreach (Row r in ordered)
+			{
+				var ranks = new int[_SortBy.Count];
+				string prefix = "";
+				for (int i = 0; i < _SortBy.Count; i++)
+				{
+					RowsSortExpression se = _SortBy[i];
+					object v = Task.Run(async () => await se.expr.Evaluate(this._Rpt, r)).GetAwaiter().GetResult();
+					prefix += "\u0001" + (v == null ? "\u0000" : v.ToString());
+					if (!se.original)
+						continue;
+					maps[i] ??= new Dictionary<string, int>();
+					if (!maps[i].TryGetValue(prefix, out int rank))
+					{
+						rank = maps[i].Count;
+						maps[i][prefix] = rank;
+					}
+					ranks[i] = rank;
+				}
+				seen[r] = ranks;
+			}
+			_FirstSeen = seen;
 		}
 
 		internal List<Row> Data
@@ -185,8 +224,16 @@ namespace Majorsilence.Reporting.Rdl
 			int rc;
 			try 
 			{
-				foreach (RowsSortExpression se in _SortBy)
+				for (int i = 0; i < _SortBy.Count; i++)
 				{
+					RowsSortExpression se = _SortBy[i];
+					if (se.original && _FirstSeen != null)
+					{
+						rc = _FirstSeen[r1][i] - _FirstSeen[r2][i];
+						if (rc != 0)
+							return rc;
+						continue;
+					}
 					// HACK: async
 					o1 = Task.Run(async () => await se.expr.Evaluate(this._Rpt, r1)).GetAwaiter().GetResult();
 					o2 = Task.Run(async () => await se.expr.Evaluate(this._Rpt, r2)).GetAwaiter().GetResult();
@@ -217,6 +264,7 @@ namespace Majorsilence.Reporting.Rdl
 	{
 		internal Expression expr;
 		internal bool bAscending;
+		internal bool original;		// CrystalEngine: keep groups in the order they first appear
 
 		internal RowsSortExpression(Expression e, bool asc)
 		{
