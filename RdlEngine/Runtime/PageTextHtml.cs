@@ -417,6 +417,14 @@ namespace Majorsilence.Reporting.Rdl
 				xPos = ms.Width;	 
 			}
 		
+			// CrystalEngine: a box that cannot grow shows no line that starts below its bottom; Crystal drops those.
+			if (!this.CanGrow && this.H > 0)
+			{
+				float bottom = this.Y + this.H;
+				for (int i = _items.Count - 1; i > 1; i--)
+					if (_items[i].Y >= bottom && _items[i].Y > _items[1].Y + 0.01f)
+						_items.RemoveAt(i);
+			}
 			_TotalHeight = yPos;		// set the calculated height of the result
 			_StyleStack = null;
 			return;
