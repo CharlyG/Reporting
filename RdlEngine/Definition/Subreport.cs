@@ -192,6 +192,8 @@ namespace Majorsilence.Reporting.Rdl
 			SetPageLeft(r);				// Set the Left attribute since this will be the margin for this report
 
 			SetPagePositionBegin(pgs);
+			Page startPage = pgs.CurrentPage;			// CrystalEngine: to find how far down the subreport drew
+			int startCount = startPage.Count;
 
             float yOffset;
 
@@ -231,6 +233,17 @@ namespace Majorsilence.Reporting.Rdl
                 else
                     yOffset = pgs.CurrentPage.YOffset;
             }
+
+			// CrystalEngine: in a table cell the position the subreport leaves is not where its items end - its table
+			// starts below an offset the position does not count - so the row is taken to the lowest thing drawn.
+			if (this.TC != null && pgs.CurrentPage == startPage)
+			{
+				float lowest = startPage.YOffset;
+				for (int k = startCount; k < startPage.Count; k++)
+					if (startPage[k] is PageText)
+						lowest = Math.Max(lowest, startPage[k].Y + startPage[k].H);
+				startPage.YOffset = lowest;
+			}
 
 			r.SetReportDefinition(saveReport);			// restore the current report
 			r.ParentConnections = saveDS;				// restore the data connnections
