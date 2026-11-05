@@ -30,6 +30,7 @@ namespace Majorsilence.Reporting.Rdl
 		bool _CanShrink;		// indicates that row height can decrease in size
 		List<Textbox> _GrowList;	// list of TextBox's that need to be checked for growth
 		float _FitHeight;		// CrystalEngine: the height this row is fitted to a page by, when less than its own
+		bool _PageBreakBefore;	// CrystalEngine: Crystal's New Page Before on a section - this row starts a page
 		float _KeepWithNext;		// CrystalEngine: this row stays on the same page as the row after it; the height in points the run is held to
 
 		internal TableRow(ReportDefn r, ReportLink p, XmlNode xNode) : base(r, p)
@@ -63,6 +64,9 @@ namespace Majorsilence.Reporting.Rdl
 							if (float.TryParse(xNodeLoop.InnerText.Trim(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out fh))
 								_FitHeight = fh;
 						}
+						break;
+					case "PageBreakBefore":
+						_PageBreakBefore = xNodeLoop.InnerText.Trim().Equals("true", StringComparison.OrdinalIgnoreCase);
 						break;
 					case "KeepWithNext":
 						{
@@ -163,6 +167,11 @@ namespace Majorsilence.Reporting.Rdl
 		internal float FitHeight
 		{
 			get { return _FitHeight; }
+		}
+
+		internal bool PageBreakBefore
+		{
+			get { return _PageBreakBefore; }
 		}
 
 		internal float KeepWithNext

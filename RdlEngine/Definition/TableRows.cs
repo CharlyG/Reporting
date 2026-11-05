@@ -79,6 +79,17 @@ namespace Majorsilence.Reporting.Rdl
             await RunPage(pgs, row, false);
 		}
 
+		// CrystalEngine: a row of a section ticked New Page Before starts a page, unless it is hidden or the page is still empty
+		async Task BreakBefore(Pages pgs, Row row, TableRow t)
+		{
+			if (!t.PageBreakBefore || pgs.CurrentPage.IsEmpty())
+				return;
+			if (t.Visibility != null && await t.Visibility.IsHidden(pgs.Report, row))
+				return;
+			Page p = OwnerTable.RunPageNew(pgs, pgs.CurrentPage);
+			await OwnerTable.RunPageHeader(pgs, row, false, null);
+		}
+
 		internal async Task RunPage(Pages pgs, Row row, bool bCheckRows)
 		{
 			if (bCheckRows)
@@ -87,6 +98,7 @@ namespace Majorsilence.Reporting.Rdl
 				for (int i = 0; i < _Items.Count; i++)
 				{
 					TableRow t = _Items[i];
+					await BreakBefore(pgs, row, t);
 					Page p = pgs.CurrentPage;			// this can change after running a row
 					float hrows = await t.HeightOfRow(pgs, row);	// height of this row
 					// CrystalEngine: a row flagged KeepWithNext moves to the next page together with the rows
@@ -121,7 +133,10 @@ namespace Majorsilence.Reporting.Rdl
 			else
 			{	// all rows will fit on the page
 				foreach (TableRow t in _Items)
+				{
+					await BreakBefore(pgs, row, t);
                     await t.RunPage(pgs, row);
+				}
 			}
 			return;
 		}
