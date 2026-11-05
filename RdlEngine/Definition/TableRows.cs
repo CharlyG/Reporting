@@ -79,6 +79,21 @@ namespace Majorsilence.Reporting.Rdl
             await RunPage(pgs, row, false);
 		}
 
+		// CrystalEngine: the height a row prints at, found by running it once on a scratch page with room for all of it
+		async Task<float> MeasureRow(Pages pgs, Row row, TableRow t)
+		{
+			// not disposed: that would dispose the report it shares
+			Pages scratch = new Pages(pgs.Report);
+			Page sp = new Page(pgs.CurrentPage.PageNumber);
+			scratch.AddPage(sp);
+			scratch.BottomOfPage = 10000000f;
+			sp.YOffset = 0;
+			if (t.Visibility != null && await t.Visibility.IsHidden(pgs.Report, row))
+				return 0;
+			await t.TableCells.RunPage(scratch, row);	// the cells only: the row's own height is the designed one
+			return scratch.LastPage.YOffset;
+		}
+
 		// CrystalEngine: a row of a section ticked New Page Before starts a page, unless it is hidden or the page is still empty
 		async Task BreakBefore(Pages pgs, Row row, TableRow t)
 		{
@@ -113,7 +128,13 @@ namespace Majorsilence.Reporting.Rdl
 						bool keepRun = run > hrows && run < pgs.BottomOfPage / 2;
 					float fit = t.FitHeight > 0 ? Math.Min(hrows, t.FitHeight) : hrows;
 					// CrystalEngine: a subreport starts where it is and breaks across pages in its own tables
-					if (t.HasSubreport)
+					if (t.KeepSubreport)
+						{
+							// kept whole only when it can fit on a page; a longer one starts where it is
+							float printed = await MeasureRow(pgs, row, t);
+							fit = printed > pgs.BottomOfPage - OwnerReport.TopOfPage ? Math.Min(fit, 60) : printed;
+						}
+					else if (t.HasSubreport)
 						fit = Math.Min(fit, 60);
 						float height = p.YOffset + (keepRun ? run : fit);
 					if (height > pgs.BottomOfPage)
