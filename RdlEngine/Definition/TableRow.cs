@@ -31,6 +31,7 @@ namespace Majorsilence.Reporting.Rdl
 		List<Textbox> _GrowList;	// list of TextBox's that need to be checked for growth
 		float _FitHeight;		// CrystalEngine: the height this row is fitted to a page by, when less than its own
 		bool _KeepSubreport;	// CrystalEngine: a Keep Together section holding a subreport moves to the next page whole when what it prints does not fit
+		bool _PrintAtBottom;	// CrystalEngine: Crystal's Print at Bottom of Page - the row ends at the foot of the page
 		bool _PageBreakBefore;	// CrystalEngine: Crystal's New Page Before on a section - this row starts a page
 		float _KeepWithNext;		// CrystalEngine: this row stays on the same page as the row after it; the height in points the run is held to
 
@@ -68,6 +69,9 @@ namespace Majorsilence.Reporting.Rdl
 						break;
 					case "KeepSubreport":
 						_KeepSubreport = xNodeLoop.InnerText.Trim().Equals("true", StringComparison.OrdinalIgnoreCase);
+						break;
+					case "PrintAtBottom":
+						_PrintAtBottom = xNodeLoop.InnerText.Trim().Equals("true", StringComparison.OrdinalIgnoreCase);
 						break;
 					case "PageBreakBefore":
 						_PageBreakBefore = xNodeLoop.InnerText.Trim().Equals("true", StringComparison.OrdinalIgnoreCase);
@@ -176,6 +180,11 @@ namespace Majorsilence.Reporting.Rdl
 		internal bool KeepSubreport
 		{
 			get { return _KeepSubreport; }
+		}
+
+		internal bool PrintAtBottom
+		{
+			get { return _PrintAtBottom; }
 		}
 
 		internal bool PageBreakBefore

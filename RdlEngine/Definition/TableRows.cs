@@ -111,6 +111,19 @@ namespace Majorsilence.Reporting.Rdl
 			await OwnerTable.RunPageHeader(pgs, row, false, null);
 		}
 
+		// CrystalEngine: a row of a section ticked Print at Bottom of Page ends at the foot of the page
+		async Task AlignBottom(Pages pgs, Row row, TableRow t)
+		{
+			if (!t.PrintAtBottom)
+				return;
+			if (t.Visibility != null && await t.Visibility.IsHidden(pgs.Report, row))
+				return;
+			Page p = pgs.CurrentPage;
+			float top = pgs.BottomOfPage - await t.HeightOfRow(pgs, row);
+			if (top > p.YOffset)
+				p.YOffset = top;
+		}
+
 		internal async Task RunPage(Pages pgs, Row row, bool bCheckRows)
 		{
 			if (bCheckRows)
@@ -152,6 +165,7 @@ namespace Majorsilence.Reporting.Rdl
 						p.YOffset += carry;
 					}
 					carry = 0;
+					await AlignBottom(pgs, row, t);
 					await t.RunPage(pgs, row);
 					if (fit < hrows && pgs.CurrentPage.YOffset > pgs.BottomOfPage)
 						carry = pgs.CurrentPage.YOffset - pgs.BottomOfPage;
@@ -162,6 +176,7 @@ namespace Majorsilence.Reporting.Rdl
 				foreach (TableRow t in _Items)
 				{
 					await BreakBefore(pgs, row, t);
+					await AlignBottom(pgs, row, t);
                     await t.RunPage(pgs, row);
 				}
 			}
