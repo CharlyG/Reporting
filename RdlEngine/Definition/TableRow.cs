@@ -129,10 +129,17 @@ namespace Majorsilence.Reporting.Rdl
 			if (this.Visibility != null && await Visibility.IsHidden(pgs.Report, row))
 				return;
 
+			Page startPage = pgs.CurrentPage;
+			float startY = startPage.YOffset;
             await _TableCells.RunPage(pgs, row);
 
 			WorkClass wc = GetWC(pgs.Report);
-			pgs.CurrentPage.YOffset += wc.CalcHeight;
+			// CrystalEngine: a subreport in a cell can run past the row's height; the row is as tall as it ran.
+			// TableCells leaves the offset where the tallest subreport ended, or at the row start.
+			if (pgs.CurrentPage == startPage)
+				startPage.YOffset = startY + Math.Max(wc.CalcHeight, startPage.YOffset - startY);
+			else if (!HasSubreport)
+				pgs.CurrentPage.YOffset += wc.CalcHeight;	// (a subreport that broke the page has already advanced it)
 			return ;
 		}
 
@@ -140,6 +147,17 @@ namespace Majorsilence.Reporting.Rdl
 		{
 			get { return  _TableCells; }
 			set {  _TableCells = value; }
+		}
+
+		internal bool HasSubreport
+		{
+			get
+			{
+				foreach (TableCell tc in _TableCells.Items)
+					if (tc.ReportItems.Items[0] is Subreport)
+						return true;
+				return false;
+			}
 		}
 
 		internal float FitHeight

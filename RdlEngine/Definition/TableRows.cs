@@ -100,6 +100,9 @@ namespace Majorsilence.Reporting.Rdl
 							run = Math.Max(hrows, t.KeepWithNext);
 						bool keepRun = run > hrows && run < pgs.BottomOfPage / 2;
 					float fit = t.FitHeight > 0 ? Math.Min(hrows, t.FitHeight) : hrows;
+					// CrystalEngine: a subreport starts where it is and breaks across pages in its own tables
+					if (t.HasSubreport)
+						fit = Math.Min(fit, 60);
 						float height = p.YOffset + (keepRun ? run : fit);
 					if (height > pgs.BottomOfPage)
 					{

@@ -83,9 +83,10 @@ namespace Majorsilence.Reporting.Rdl
 						maxy = maxpg.YOffset;
 					}
 				}
-				else if (maxy > pgs.CurrentPage.YOffset)
+				else if (tc.ReportItems.Items[0] is Subreport && pgs.CurrentPage.YOffset > maxy)
 				{
-					// maxy = maxy;      TODO what was this meant to do
+					// CrystalEngine: a subreport cell that ran past its row's height makes the row that tall
+					maxy = pgs.CurrentPage.YOffset;
 				}
 				// restore the beginning start of the row
 				pgs.CurrentPage = savepg;
