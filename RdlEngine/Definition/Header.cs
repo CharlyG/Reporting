@@ -77,7 +77,8 @@ namespace Majorsilence.Reporting.Rdl
 			bool currentPageAlreadyHasContent = !pgs.CurrentPage.IsEmpty();
 			float height = p.YOffset + await HeightOfRows(pgs, row);
             height += await OwnerTable.GetPageFooterHeight(pgs, row);
-			if (height > pgs.BottomOfPage && currentPageAlreadyHasContent)
+			// CrystalEngine: a header taller than a page is not helped by a new one, and starts where it is
+			if (height > pgs.BottomOfPage && currentPageAlreadyHasContent && await HeightOfRows(pgs, row) <= pgs.BottomOfPage)
 			{
 				Table t = OwnerTable;
                 await t.RunPageFooter(pgs, row, false);
@@ -87,7 +88,18 @@ namespace Majorsilence.Reporting.Rdl
 					return;		// should already be on the page
 			}
 
-            await _TableRows.RunPage(pgs, row);
+			// CrystalEngine: a header taller than the page, or holding a subreport, breaks between its rows. A page
+			// begun inside it repeats the headers above it, not itself.
+			Header saveRunning = OwnerTable.RunningHeader;
+			OwnerTable.RunningHeader = this;
+			try
+			{
+				await _TableRows.RunPage(pgs, row, p.YOffset + await HeightOfRows(pgs, row) > pgs.BottomOfPage || _TableRows.HasSubreport);
+			}
+			finally
+			{
+				OwnerTable.RunningHeader = saveRunning;
+			}
 			wc.OutputRow = row;
 			wc.OutputPage = pgs.CurrentPage;
 			return;

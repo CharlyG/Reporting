@@ -337,8 +337,13 @@ namespace Majorsilence.Reporting.Rdl
             return FooterHeight;
         }
 
+		// CrystalEngine: the header whose rows are being run; a page begun inside it does not repeat it or those after it
+		internal Header RunningHeader;
+
 		internal async Task RunPageHeader(Pages pgs, Row frow, bool bFirst, TableGroup stoptg)
 		{
+			if (RunningHeader != null && RunningHeader == _Header)
+				return;
 			// Do the table headers
 			bool isEmpty = pgs.CurrentPage.IsEmpty();
 
@@ -362,6 +367,8 @@ namespace Majorsilence.Reporting.Rdl
 			foreach (TableGroup tg in _TableGroups.Items)
 			{
 				if (stoptg != null && tg == stoptg)
+					break;
+				if (RunningHeader != null && tg.Header == RunningHeader)
 					break;
 				if (tg.Header != null)
 				{

@@ -79,6 +79,12 @@ namespace Majorsilence.Reporting.Rdl
             await RunPage(pgs, row, false);
 		}
 
+		// CrystalEngine: a row holding a subreport prints as tall as the subreport, which the designed heights do not count
+		internal bool HasSubreport
+		{
+			get { return _Items.Exists(t => t.HasSubreport); }
+		}
+
 		// CrystalEngine: the height a row prints at, found by running it once on a scratch page with room for all of it
 		async Task<float> MeasureRow(Pages pgs, Row row, TableRow t)
 		{
