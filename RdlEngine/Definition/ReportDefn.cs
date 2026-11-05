@@ -591,7 +591,10 @@ namespace Majorsilence.Reporting.Rdl
                 {
                     if (Subreport.Left == null)
                         Subreport.Left = new RSize(this, "0 in");
-                    return Subreport.Left + Subreport.OwnerReport.LeftMargin;
+                    // CrystalEngine: in a table cell the position comes from the column, so the placed object's Left
+                    // (which the converter gives as the subreport's own margin) is added here
+                    RSize own = Subreport.TC != null && _LeftMargin != null ? _LeftMargin : new RSize(this, "0 in");
+                    return Subreport.Left + Subreport.OwnerReport.LeftMargin + own;
                 }
 
 				if (_LeftMargin == null)

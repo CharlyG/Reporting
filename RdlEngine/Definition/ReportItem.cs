@@ -483,7 +483,12 @@ namespace Majorsilence.Reporting.Rdl
 				Table t = _TC.OwnerTable;
 				int colindex = _TC.ColIndex;
 				TableColumn tc = (TableColumn) (t.TableColumns.Items[colindex]);
-				Left = new RSize(OwnerReport, tc.GetXPosition(rpt).ToString() + "pt");
+				// CrystalEngine: the column's position already counts the owner's left margin, and a subreport's own
+				// LeftMargin adds it again (ReportDefn.LeftMargin), so the margin is taken off here
+				float x = tc.GetXPosition(rpt);
+				if (this is Subreport)
+					x = Math.Max(0, x - OwnerReport.LeftMargin.Points);
+				Left = new RSize(OwnerReport, x.ToString() + "pt");
 			}
 			else if (Left == null)
 				Left = new RSize(OwnerReport, "0pt");
