@@ -17,6 +17,9 @@ namespace Majorsilence.Reporting.Rdl
 		bool _RepeatOnNewPage;	// Indicates this header should be displayed on
 								// each page that the table (or group) is displayed		
 
+		internal bool OuterHeaderCopy { get { return _OuterHeaderCopy; } }
+		bool _OuterHeaderCopy;	// CrystalEngine: this header is a copy of the parent's, drawn when a subreport runs onto a page
+
 		internal Header(ReportDefn r, ReportLink p, XmlNode xNode) : base(r, p)
 		{
 			_TableRows=null;
@@ -31,6 +34,9 @@ namespace Majorsilence.Reporting.Rdl
 				{
 					case "TableRows":
 						_TableRows = new TableRows(r, this, xNodeLoop);
+						break;
+					case "OuterHeaderCopy":
+						_OuterHeaderCopy = true;
 						break;
 					case "RepeatOnNewPage":
 						_RepeatOnNewPage = XmlUtil.Boolean(xNodeLoop.InnerText, OwnerReport.rl);

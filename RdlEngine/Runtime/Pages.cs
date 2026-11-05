@@ -22,6 +22,9 @@ namespace Majorsilence.Reporting.Rdl
         Bitmap _bm;                     // bitmap to build graphics object 
         Graphics _g;                    // graphics object
         Report _report;					// owner report
+        // CrystalEngine: the tables, and the rows, whose cells hold the subreports being run - a page begun in a subreport repeats their headers
+        internal Dictionary<Table, Page> HeaderPage = new Dictionary<Table, Page>();   // CrystalEngine: the page a table's header last ran on
+        internal List<KeyValuePair<Table, Row>> OuterTables = new List<KeyValuePair<Table, Row>>();
         List<Page> _pages;              // array of pages
         Page _currentPage;              // the current page; 1st page if null
         float _BottomOfPage;            // the bottom of the page

@@ -207,7 +207,13 @@ namespace Majorsilence.Reporting.Rdl
                 //
                 // Run the subreport -- this is the major effort in creating the display objects in the page
                 //
-                await r.ReportDefinition.Body.RunPage(pgs);		// create a the subreport items
+                Table outer = null;
+                for (ReportLink rl = this.Parent; rl != null && outer == null; rl = rl.Parent)
+                    outer = rl as Table;
+                if (outer != null)
+                    pgs.OuterTables.Add(new System.Collections.Generic.KeyValuePair<Table, Row>(outer, row));
+                try { await r.ReportDefinition.Body.RunPage(pgs); }		// create a the subreport items
+                finally { if (outer != null) pgs.OuterTables.RemoveAt(pgs.OuterTables.Count - 1); }
                 yOffset = pgs.CurrentPage.YOffset;
             }
             else

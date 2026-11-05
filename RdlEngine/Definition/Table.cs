@@ -342,13 +342,23 @@ namespace Majorsilence.Reporting.Rdl
 
 		internal async Task RunPageHeader(Pages pgs, Row frow, bool bFirst, TableGroup stoptg)
 		{
+			// CrystalEngine: a page begun inside a subreport carries the headers of the tables around it first
+			if (!bFirst && !(_Header != null && _Header.OuterHeaderCopy) && pgs.OuterTables.Count > 0 && !pgs.OuterTables.Exists(o => o.Key == this))
+			{
+				var outers = pgs.OuterTables.ToArray();
+				pgs.OuterTables.Clear();
+				try { foreach (var o in outers) await o.Key.RunPageHeader(pgs, o.Value, false, null); }
+				finally { pgs.OuterTables.AddRange(outers); }
+			}
 			if (RunningHeader != null && RunningHeader == _Header)
 				return;
 			// Do the table headers
 			bool isEmpty = pgs.CurrentPage.IsEmpty();
 
-			if (_Header != null && (_Header.RepeatOnNewPage || bFirst))
+			if (_Header != null && (_Header.RepeatOnNewPage || bFirst)
+				&& (bFirst || !pgs.HeaderPage.TryGetValue(this, out Page hp) || hp != pgs.CurrentPage))
 			{
+                pgs.HeaderPage[this] = pgs.CurrentPage;
                 await _Header.RunPage(pgs, frow);
 				if (isEmpty)
 					pgs.CurrentPage.SetEmpty();		// Consider this empty of data
