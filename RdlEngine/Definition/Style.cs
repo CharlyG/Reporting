@@ -1411,6 +1411,11 @@ namespace Majorsilence.Reporting.Rdl
 			pts = await _FontSize.EvaluateString(rpt, row);
 			if (pts == null)		// e.g. an expression that evaluated to no result
 				return 10;
+			// A size in points is kept as written. RSize holds a length in hundredths of a millimetre, which
+			// moves 7.95pt to 7.937pt, a 0.16% narrower line: 0.7pt short over a 430pt line.
+			var inPoints = System.Text.RegularExpressions.Regex.Match(pts, @"^\s*(\d+(?:\.\d+)?)\s*pt\s*$");
+			if (inPoints.Success && float.TryParse(inPoints.Groups[1].Value, NumberStyles.Float, CultureInfo.InvariantCulture, out float written))
+				return written;
 			RSize sz = new RSize(this.OwnerReport, pts);
 
 			return sz.Points;
