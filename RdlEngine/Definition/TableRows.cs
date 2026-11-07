@@ -149,9 +149,10 @@ namespace Majorsilence.Reporting.Rdl
 					// CrystalEngine: a subreport starts where it is and breaks across pages in its own tables
 					if (t.KeepSubreport)
 						{
-							// kept whole only when it can fit on a page; a longer one starts where it is
+							// kept whole when it is under half a page; a longer one starts where it is and breaks in its own tables, as a run of rows
+							// kept together is left to split at that size
 							float printed = await MeasureRow(pgs, row, t);
-							fit = printed > pgs.BottomOfPage - OwnerReport.TopOfPage ? Math.Min(fit, 60) : printed;
+							fit = printed >= pgs.BottomOfPage / 2 ? Math.Min(fit, 60) : printed;
 						}
 					else if (t.HasSubreport)
 						fit = Math.Min(fit, 60);
