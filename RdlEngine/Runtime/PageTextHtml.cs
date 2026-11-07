@@ -426,6 +426,14 @@ namespace Majorsilence.Reporting.Rdl
 						_items.RemoveAt(i);
 			}
 			_TotalHeight = yPos;		// set the calculated height of the result
+			// CrystalEngine: the last line needs the height of its glyphs, not a whole line pitch, to be inside the box;
+			// four lines at a 12.5pt pitch of 9pt text fit a 48pt box in Crystal, which grows by the rest only.
+			if (si.LineHeight > 0 && _items.Count > 1)
+			{
+				float glyphs = this.MeasureString("X", si, g, out descent).Height;
+				if (si.LineHeight > glyphs)
+					_TotalHeight -= si.LineHeight - glyphs;
+			}
 			_StyleStack = null;
 			return;
 		}
