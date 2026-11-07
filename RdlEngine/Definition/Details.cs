@@ -116,15 +116,10 @@ namespace Majorsilence.Reporting.Rdl
 
 				if (r == end) 
 					height += footerHeight;		// on last row; may need additional room for footer
-				if (height > pgs.BottomOfPage)
-				{
-                    await OwnerTable.RunPageFooter(pgs, row, false);
-					p = OwnerTable.RunPageNew(pgs, p);
-                    await OwnerTable.RunPageHeader(pgs, row, false, null);
-                    await _TableRows.RunPage(pgs, row, true);   // force checking since header + hrows might be > BottomOfPage
-                }
-                else
-                    await _TableRows.RunPage(pgs, row, hrows > pgs.BottomOfPage);
+				// CrystalEngine: Crystal places a record's sections one at a time, so a record that does not
+				// fit does not move to the next page whole: its rows are checked one at a time, and the
+				// rows themselves say what stays together (KeepWithNext).
+				await _TableRows.RunPage(pgs, row, height > pgs.BottomOfPage || hrows > pgs.BottomOfPage);
 			}
 			return;
 		}
