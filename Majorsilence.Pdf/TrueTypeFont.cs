@@ -112,6 +112,7 @@ namespace Majorsilence.Pdf
             ParseMaxp(tables);
             ParseHmtx(tables);
             ParseCmap(tables);
+            ParseKern(tables);
             ParseName(tables);
             if (!tables.ContainsKey("glyf") && tables.ContainsKey("CBDT") && tables.ContainsKey("CBLC"))
             {
@@ -158,6 +159,56 @@ namespace Majorsilence.Pdf
             for (int i = nHM; i < _numGlyphs; i++)
                 _advanceWidths[i] = last;
         }
+
+        // CrystalEngine: the 'kern' table's format 0 pairs, which Crystal applies (Times New Roman "Vo" is 1.16pt
+        // closer at 9pt: ICP's "Volunteer" is 34.6pt in Crystal, 35.8 without).
+        private Dictionary<uint, short>? _kern;
+
+        private void ParseKern(Dictionary<string, (int offset, int length)> t)
+        {
+            // Crystal kerns a face that declares kerning in its OpenType layout (GPOS "kern": Times New Roman, Arial);
+            // Franklin Gothic carries a legacy table only, and its words are the plain advances' width.
+            if (!t.TryGetValue("kern", out var e) || e.length < 4 || !HasGposKern(t)) return;
+            int o = e.offset;
+            int n = U16(_data, o + 2);
+            o += 4;
+            for (int i = 0; i < n && o + 6 <= e.offset + e.length; i++)
+            {
+                int length = U16(_data, o + 2);
+                int coverage = U16(_data, o + 4);
+                // horizontal, not minimum, not cross-stream, format 0
+                if ((coverage >> 8) == 0 && (coverage & 1) == 1 && (coverage & 6) == 0 && o + 14 <= _data.Length)
+                {
+                    int pairs = U16(_data, o + 6);
+                    _kern ??= new Dictionary<uint, short>(pairs);
+                    for (int k = 0; k < pairs; k++)
+                    {
+                        int r = o + 14 + k * 6;
+                        _kern[((uint)U16(_data, r) << 16) | U16(_data, r + 2)] = (short)U16(_data, r + 4);
+                    }
+                }
+                if (length <= 0) break;
+                o += length;
+            }
+        }
+
+        private bool HasGposKern(Dictionary<string, (int offset, int length)> t)
+        {
+            if (!t.TryGetValue("GPOS", out var g) || g.length < 10) return false;
+            int featureList = g.offset + U16(_data, g.offset + 6);
+            int count = U16(_data, featureList);
+            for (int i = 0; i < count; i++)
+            {
+                int r = featureList + 2 + i * 6;
+                if (r + 4 <= _data.Length && _data[r] == 'k' && _data[r + 1] == 'e' && _data[r + 2] == 'r' && _data[r + 3] == 'n')
+                    return true;
+            }
+            return false;
+        }
+
+        /// <summary>The kerning between two glyphs in font units; 0 when the pair has none.</summary>
+        public int GetKern(ushort left, ushort right) =>
+            _kern is not null && _kern.TryGetValue(((uint)left << 16) | right, out var k) ? k : 0;
 
         private void ParseCmap(Dictionary<string, (int offset, int length)> t)
         {
@@ -379,6 +430,7 @@ namespace Majorsilence.Pdf
         {
             if (_unitsPerEm == 0 || _advanceWidths == null || text == null) return 0f;
             float total = 0f;
+            ushort previous = 0;
             for (int i = 0; i < text.Length; i++)
             {
                 int cp;
@@ -391,7 +443,10 @@ namespace Majorsilence.Pdf
                 {
                     cp = text[i];
                 }
-                total += GetAdvanceWidth(GetGlyphId(cp));
+                ushort gid = GetGlyphId(cp);
+                if (previous != 0) total += GetKern(previous, gid);
+                total += GetAdvanceWidth(gid);
+                previous = gid;
             }
             return total / _unitsPerEm * fontSize;
         }

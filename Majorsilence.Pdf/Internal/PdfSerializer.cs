@@ -954,6 +954,29 @@ namespace Majorsilence.Pdf.Internal
             return sb.ToString();
         }
 
+        // CrystalEngine: the text as a TJ array, with the font's kerning between the glyphs that have it
+        internal static string EncodeGlyphIdsKerned(string text, TrueTypeFont ttf, HashSet<ushort>? usedGlyphs = null)
+        {
+            var sb = new StringBuilder("[<");
+            ushort previous = 0;
+            for (int i = 0; i < text.Length; i++)
+            {
+                int codePoint;
+                if (char.IsHighSurrogate(text[i]) && i + 1 < text.Length && char.IsLowSurrogate(text[i + 1]))
+                { codePoint = char.ConvertToUtf32(text[i], text[i + 1]); i++; }
+                else codePoint = text[i];
+                ushort gid = ttf.GetGlyphId(codePoint);
+                usedGlyphs?.Add(gid);
+                int kern = previous == 0 ? 0 : ttf.GetKern(previous, gid);
+                if (kern != 0 && ttf.UnitsPerEm > 0)
+                    sb.Append("> ").Append((-kern * 1000.0 / ttf.UnitsPerEm).ToString("0.###", System.Globalization.CultureInfo.InvariantCulture)).Append(" <");
+                sb.Append(gid.ToString("X4"));
+                previous = gid;
+            }
+            sb.Append(">]");
+            return sb.ToString();
+        }
+
         private static string BytesToHex(byte[] bytes)
         {
             var sb = new StringBuilder(bytes.Length * 2);
