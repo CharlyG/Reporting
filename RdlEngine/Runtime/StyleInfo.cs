@@ -153,6 +153,7 @@ namespace Majorsilence.Reporting.Rdl
 		/// Height of a line of text.
 		/// </summary>
 		public float LineHeight;		// (Size) Height of a line of text
+		public float LastLineHeight;	// CrystalEngine: what the last line of a box of lines needs inside the box; 0 when unset
 		/// <summary>
 		/// Indicates whether text is written left-to-right (default)
 		/// </summary>
@@ -214,6 +215,7 @@ namespace Majorsilence.Reporting.Rdl
             ColorText = "Black";
             PaddingLeft = PaddingRight = PaddingTop = PaddingBottom = 0;
 			LineHeight = 0;
+			LastLineHeight = 0;
 			Direction = DirectionEnum.LTR;
 			WritingMode = WritingModeEnum.lr_tb;
 			Language = "en-US";

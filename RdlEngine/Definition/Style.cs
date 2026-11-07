@@ -64,6 +64,7 @@ namespace Majorsilence.Reporting.Rdl
 		//	report item and its contents
 		// Default: 0 pt. Max: 1000 pt
 		Expression _LineHeight;		// (Size) Height of a line of text
+		Expression _LastLineHeight;	// CrystalEngine: (Size) what the last line of a box of lines needs inside the box
 		// Default: Report output format determines
 		// line height based on font size
 		// Min: 1 pt. Max: 1000 pt.
@@ -124,6 +125,7 @@ namespace Majorsilence.Reporting.Rdl
 			_PaddingTop=null;
 			_PaddingBottom=null;
 			_LineHeight=null;
+			_LastLineHeight=null;
 			_Direction=null;
 			_WritingMode=null;
 			_Language=null;
@@ -202,6 +204,9 @@ namespace Majorsilence.Reporting.Rdl
 					case "lineheight":
 						_LineHeight = new Expression(r, this, xNodeLoop, ExpressionType.ReportUnit);
 						break;
+					case "lastlineheight":
+						_LastLineHeight = new Expression(r, this, xNodeLoop, ExpressionType.ReportUnit);
+						break;
 					case "direction":
 						_Direction = new Expression(r, this, xNodeLoop, ExpressionType.Enum);
 						break;
@@ -276,6 +281,8 @@ namespace Majorsilence.Reporting.Rdl
                 await _PaddingBottom.FinalPass();
 			if (_LineHeight != null)
                 await _LineHeight.FinalPass();
+			if (_LastLineHeight != null)
+                await _LastLineHeight.FinalPass();
 			if (_Direction != null)
                 await _Direction.FinalPass();
 			if (_WritingMode != null)
@@ -1051,6 +1058,7 @@ namespace Majorsilence.Reporting.Rdl
 			si.PaddingTop = await this.EvalPaddingTop(rpt, r);
 			si.PaddingBottom = await this.EvalPaddingBottom(rpt, r);
 			si.LineHeight = await this.EvalLineHeight(rpt, r);
+			si.LastLineHeight = await this.EvalLastLineHeight(rpt, r);
 			si.Direction = await this.EvalDirection(rpt, r);
 			si.WritingMode = await this.EvalWritingMode(rpt, r);
 			si.Language = await this.EvalLanguage(rpt, r);
@@ -1261,6 +1269,8 @@ namespace Majorsilence.Reporting.Rdl
 
 			if (_LineHeight != null)
 				rc = await _LineHeight.IsConstant();
+			if (rc && _LastLineHeight != null)
+				rc = await _LastLineHeight.IsConstant();
 
 			if (!rc)
 				return false;
@@ -1655,6 +1665,17 @@ namespace Majorsilence.Reporting.Rdl
 			string sz = await _LineHeight.EvaluateString(rpt, r);
 			RSize rz = new RSize(OwnerReport, sz);
 			return rz.Points;
+		}
+
+		internal bool HasLastLineHeight { get { return _LastLineHeight != null; } }
+
+		internal async Task<float> EvalLastLineHeight(Report rpt, Row r)
+		{
+			if (_LastLineHeight == null)
+				return 0;
+
+			string sz = await _LastLineHeight.EvaluateString(rpt, r);
+			return new RSize(OwnerReport, sz).Points;
 		}
 
 		internal Expression Direction

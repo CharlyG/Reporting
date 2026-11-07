@@ -80,6 +80,17 @@ namespace Majorsilence.Reporting.Rdl
 			}
 		}
 
+		// CrystalEngine: the boxes directly inside that can grow and are set at Crystal's own line pitch (they say what their last line needs)
+		internal System.Collections.Generic.List<Textbox> GrowingBoxes()
+		{
+			var boxes = new System.Collections.Generic.List<Textbox>();
+			if (_ReportItems != null)
+				foreach (ReportItem ri in _ReportItems.Items)
+					if (ri is Textbox tb && tb.CanGrow && tb.Top != null && tb.Style != null && tb.Style.HasLastLineHeight)
+						boxes.Add(tb);
+			return boxes;
+		}
+
 		async override internal Task RunPage(Pages pgs, Row row)
 		{
 			Report r = pgs.Report;

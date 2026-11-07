@@ -105,6 +105,9 @@ namespace Majorsilence.Reporting.Rdl
 			foreach (TableCell tc in _TableCells.Items)
 			{
 				ReportItem ri = tc.ReportItems.Items[0] as ReportItem;
+				// CrystalEngine: a section of several items is a rectangle, and a growing box inside it grows the row
+				if (ri is Rectangle rect && rect.GrowingBoxes().Count > 0)
+					_CanGrow = true;
 				if (!(ri is Textbox))
 					continue;
 				Textbox tb = ri as Textbox;
@@ -120,7 +123,7 @@ namespace Majorsilence.Reporting.Rdl
 			}
 
 			if (_CanGrow)				// shrink down the resulting list
-                _GrowList.TrimExcess();
+                _GrowList?.TrimExcess();
 
 			return;
 		}
@@ -232,7 +235,14 @@ namespace Majorsilence.Reporting.Rdl
 			{
 				Textbox tb = tc.ReportItems.Items[0] as Textbox;
 				float cellHeight;
-				if (tb != null && (tb.CanGrow || tb.CanShrink))
+				if (tc.ReportItems.Items[0] is Rectangle rect && rect.GrowingBoxes() is { Count: > 0 } growing)
+				{
+					cellHeight = defnHeight;
+					// the section reaches the bottom of the box it holds, which Crystal grows only past its designed height
+					foreach (Textbox gb in growing)
+						cellHeight = Math.Max(cellHeight, gb.Top.Points + Math.Max(gb.Height.Points, await gb.RunTextCalcHeight(rpt, g, r)));
+				}
+				else if (tb != null && (tb.CanGrow || tb.CanShrink))
 				{
 					int ci = tb.TC.ColIndex;
 					if (await tcs[ci].IsHidden(rpt, r))    // if column is hidden don't use in calculation
