@@ -149,10 +149,14 @@ namespace Majorsilence.Reporting.Rdl
 					// CrystalEngine: a subreport starts where it is and breaks across pages in its own tables
 					if (t.KeepSubreport)
 						{
-							// kept whole when it is under half a page; a longer one starts where it is and breaks in its own tables, as a run of rows
-							// kept together is left to split at that size
+							// moved whole to the next page when what it prints fits a fresh page and less than half the page
+							// is left; otherwise it starts where it is and breaks in its own tables. IDT's Signatures (608pt
+							// with 334pt left) move as Crystal's do, its Orders (514pt with 478pt left) start where they are
+							// and break, and OAAsmtE's wounds (1118pt) are taller than a page
 							float printed = await MeasureRow(pgs, row, t);
-							fit = printed >= pgs.BottomOfPage / 2 ? Math.Min(fit, 60) : printed;
+							bool fitsPage = printed <= pgs.BottomOfPage - OwnerReport.TopOfPage;
+							bool lowerHalf = pgs.BottomOfPage - p.YOffset < pgs.BottomOfPage / 2;
+							fit = fitsPage && lowerHalf ? printed : Math.Min(fit, 60);
 						}
 					else if (t.HasSubreport)
 						fit = Math.Min(fit, 60);
