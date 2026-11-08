@@ -298,7 +298,9 @@ namespace Majorsilence.Reporting.Rdl
                             break;
                     }
 
-                    if (stretch != null && i < stretch.Length && stretch[i] && text.IndexOf(' ') > 0)
+                    if (text.IndexOf('\t') >= 0 && si.TextAlign != TextAlignEnum.Center && si.TextAlign != TextAlignEnum.Right)
+                        DrawTabbed(text, startX, startY + si.FontSize, baseStyle);
+                    else if (stretch != null && i < stretch.Length && stretch[i] && text.IndexOf(' ') > 0)
                     {
                         DrawStretched(text, startX, startY + si.FontSize, baseStyle, availableW - textwidth);
                         textwidth = availableW;
@@ -378,6 +380,25 @@ namespace Majorsilence.Reporting.Rdl
                 start = end;
                 if (start < text.Length) gaps++;
                 while (start < text.Length && text[start] == ' ') start++;
+            }
+        }
+
+        // Where a tab moves the text to: the next stop of a quarter inch from where the line starts, as Crystal sets
+        // them. IDT's "Phone:\t\tFax:" puts "Fax:" 54pt in, "Phone:" ending at 21; OAAsmtE's "0-4\tMinimal" puts
+        // "Minimal" 18pt in, "0-4" ending at 11.
+        internal const float TabStop = 18f;
+
+        private void DrawTabbed(string text, float x, float baseline, TextStyle style)
+        {
+            float at = 0;
+            string[] pieces = text.Split('\t');
+            for (int k = 0; k < pieces.Length; k++)
+            {
+                if (k > 0)
+                    at = (float)(Math.Floor(at / TabStop + 1e-4) + 1) * TabStop;
+                if (pieces[k].Length == 0) continue;
+                _currentPage.DrawText(pieces[k], x + at, baseline, style);
+                at += _currentPage.MeasureTextWidth(pieces[k], style);
             }
         }
 

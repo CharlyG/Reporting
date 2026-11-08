@@ -19,6 +19,7 @@ namespace Majorsilence.Reporting.Rdl
 
 		internal bool OuterHeaderCopy { get { return _OuterHeaderCopy; } }
 		bool _OuterHeaderCopy;	// CrystalEngine: this header is a copy of the parent's, drawn when a subreport runs onto a page
+		bool _PagedByRows;		// CrystalEngine: this header's rows are sections that each fit a page by their own rows' keeps
 
 		internal Header(ReportDefn r, ReportLink p, XmlNode xNode) : base(r, p)
 		{
@@ -37,6 +38,9 @@ namespace Majorsilence.Reporting.Rdl
 						break;
 					case "OuterHeaderCopy":
 						_OuterHeaderCopy = true;
+						break;
+					case "PagedByRows":
+						_PagedByRows = XmlUtil.Boolean(xNodeLoop.InnerText, OwnerReport.rl);
 						break;
 					case "RepeatOnNewPage":
 						_RepeatOnNewPage = XmlUtil.Boolean(xNodeLoop.InnerText, OwnerReport.rl);
@@ -84,7 +88,9 @@ namespace Majorsilence.Reporting.Rdl
 			float height = p.YOffset + await HeightOfRows(pgs, row);
             height += await OwnerTable.GetPageFooterHeight(pgs, row);
 			// CrystalEngine: a header taller than a page is not helped by a new one, and starts where it is
-			if (height > pgs.BottomOfPage && currentPageAlreadyHasContent && await HeightOfRows(pgs, row) <= pgs.BottomOfPage)
+			// A header of sections is not moved whole: each row is fitted to the page as it comes, held to the rows after it
+			// only as its KeepWithNext says. IDT's last order starts at the foot of page 10, its Goal running onto page 11.
+			if (!_PagedByRows && height > pgs.BottomOfPage && currentPageAlreadyHasContent && await HeightOfRows(pgs, row) <= pgs.BottomOfPage)
 			{
 				Table t = OwnerTable;
                 await t.RunPageFooter(pgs, row, false);
@@ -100,7 +106,7 @@ namespace Majorsilence.Reporting.Rdl
 			OwnerTable.RunningHeader = this;
 			try
 			{
-				await _TableRows.RunPage(pgs, row, p.YOffset + await HeightOfRows(pgs, row) > pgs.BottomOfPage || _TableRows.HasSubreport);
+				await _TableRows.RunPage(pgs, row, _PagedByRows || p.YOffset + await HeightOfRows(pgs, row) > pgs.BottomOfPage || _TableRows.HasSubreport);
 			}
 			finally
 			{

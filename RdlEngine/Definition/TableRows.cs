@@ -132,6 +132,7 @@ namespace Majorsilence.Reporting.Rdl
 			if (bCheckRows)
 			{	// we need to check to see if a row will fit on the page
 				float carry = 0;
+				float keepLeft = 0, placedHeight = 0;	// CrystalEngine: what is left of a kept section's designed height
 				for (int i = 0; i < _Items.Count; i++)
 				{
 					TableRow t = _Items[i];
@@ -144,9 +145,14 @@ namespace Majorsilence.Reporting.Rdl
 					float run = hrows;
 					for (int j = i; j < _Items.Count - 1 && _Items[j].KeepWithNext > 0; j++)
 						run += await _Items[j + 1].HeightOfRow(pgs, row);
-					// Held to the height the section was designed at, which the file gives.
-						if (t.KeepWithNext > 0 && run > t.KeepWithNext)
-							run = Math.Max(hrows, t.KeepWithNext);
+					// Held to the height the section was designed at, which the file gives, less what its rows already
+					// placed hold of it: Crystal fits a section by its designed height where it starts, and its growing
+					// text then breaks between lines (IDT's Goal keeps its second line at the foot of page 10).
+						bool continues = i > 0 && _Items[i - 1].KeepWithNext > 0 && _Items[i - 1].KeepWithNext < float.MaxValue
+										 && _Items[i - 1].KeepWithNext == t.KeepWithNext;
+						keepLeft = continues ? keepLeft - placedHeight : t.KeepWithNext;
+						if (t.KeepWithNext > 0 && run > keepLeft)
+							run = Math.Max(hrows, keepLeft);
 						bool keepRun = run > hrows && run < pgs.BottomOfPage / 2;
 					float fit = t.FitHeight > 0 ? Math.Min(hrows, t.FitHeight) : hrows;
 					// CrystalEngine: a subreport starts where it is and breaks across pages in its own tables
@@ -175,6 +181,7 @@ namespace Majorsilence.Reporting.Rdl
 					carry = 0;
 					await AlignBottom(pgs, row, t);
 					await t.RunPage(pgs, row);
+					placedHeight = hrows;
 					if (fit < hrows && pgs.CurrentPage.YOffset > pgs.BottomOfPage)
 						carry = pgs.CurrentPage.YOffset - pgs.BottomOfPage;
 				}
