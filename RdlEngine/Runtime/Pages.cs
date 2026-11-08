@@ -63,11 +63,13 @@ namespace Majorsilence.Reporting.Rdl
 
         public void NextOrNew()
         {
+            // CrystalEngine: numbered on from the last page, not by the count: a scratch run that measures a row
+            // starts at the page it stands in for (TableRows.MeasureRow), and a page it adds is the one after it
             if (_currentPage == this.LastPage)
-                AddPage(new Page(PageCount + 1));
+                AddPage(new Page(this.LastPage.PageNumber + 1));
             else
             {
-                _currentPage = _pages[_currentPage.PageNumber];
+                _currentPage = _pages[_pages.IndexOf(_currentPage) + 1];
                 _currentPage.SetEmpty();
             }
             //Allows using PageNumber in report body.

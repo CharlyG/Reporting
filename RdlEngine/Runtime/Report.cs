@@ -85,6 +85,12 @@ namespace Majorsilence.Reporting.Rdl
 
 		internal int PageNumber=1;			// current page number
 		internal int TotalPages=1;			// total number of pages in report
+		// CrystalEngine: the page the running subreport started on, 0 outside one. Crystal numbers a subreport's
+		// pages from its own first page: IDT's Plan of Care starts on page 8 and its footer reads "Page 4 of 4".
+		internal int SubreportFirstPage;
+		internal int SubreportPageNumber => SubreportFirstPage > 0 ? PageNumber - SubreportFirstPage + 1 : PageNumber;
+		// what a subreport's total page count prints as until the subreport has finished and knows it
+		internal const string SubreportTotalPagesMark = "\u2063\u2064\u2063";
 		internal DateTime ExecutionTime;	// start time of report execution
         
         private bool _itextpdf = true;

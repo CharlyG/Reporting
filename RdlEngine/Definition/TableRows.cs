@@ -96,7 +96,10 @@ namespace Majorsilence.Reporting.Rdl
 			sp.YOffset = 0;
 			if (t.Visibility != null && await t.Visibility.IsHidden(pgs.Report, row))
 				return 0;
-			await t.TableCells.RunPage(scratch, row);	// the cells only: the row's own height is the designed one
+			// the report's page number is the scratch run's while it runs; the real page's after it
+			int pageNumber = pgs.Report.PageNumber;
+			try { await t.TableCells.RunPage(scratch, row); }	// the cells only: the row's own height is the designed one
+			finally { pgs.Report.PageNumber = pageNumber; }
 			return scratch.LastPage.YOffset;
 		}
 

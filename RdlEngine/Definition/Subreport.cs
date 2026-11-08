@@ -212,8 +212,16 @@ namespace Majorsilence.Reporting.Rdl
                     outer = rl as Table;
                 if (outer != null)
                     pgs.OuterTables.Add(new System.Collections.Generic.KeyValuePair<Table, Row>(outer, row));
+                // CrystalEngine: the subreport's pages are numbered from the page it starts on
+                int saveFirstPage = r.SubreportFirstPage;
+                r.SubreportFirstPage = startPage.PageNumber;
                 try { await r.ReportDefinition.Body.RunPage(pgs); }		// create a the subreport items
-                finally { if (outer != null) pgs.OuterTables.RemoveAt(pgs.OuterTables.Count - 1); }
+                finally
+                {
+                    if (outer != null) pgs.OuterTables.RemoveAt(pgs.OuterTables.Count - 1);
+                    r.SubreportFirstPage = saveFirstPage;
+                }
+                FillTotalPages(pgs, startPage, pgs.CurrentPage.PageNumber - startPage.PageNumber + 1);
                 yOffset = pgs.CurrentPage.YOffset;
             }
             else
@@ -256,6 +264,27 @@ namespace Majorsilence.Reporting.Rdl
 
 			SetPagePositionEnd(pgs, yOffset);
 		}
+
+        // CrystalEngine: puts the number of pages the subreport printed on where its text carries the mark
+        // Globals!SubreportTotalPages prints while that number is not known.
+        private static void FillTotalPages(Pages pgs, Page startPage, int total)
+        {
+            bool started = false;
+            foreach (Page page in pgs)
+            {
+                started |= page == startPage;
+                if (!started)
+                    continue;
+                foreach (PageItem item in page)
+                    FillTotalPages(item, total);
+            }
+        }
+
+        private static void FillTotalPages(PageItem item, int total)
+        {
+            if (item is PageText pt && pt.Text != null && pt.Text.Contains(Report.SubreportTotalPagesMark))
+                pt.Text = pt.Text.Replace(Report.SubreportTotalPagesMark, total.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        }
 
         // Whether any item here, or inside a Rectangle here, is a data region. A nested
         // Subreport is not one: it decides for itself whether it has rows.

@@ -437,6 +437,10 @@ namespace Majorsilence.Reporting.Rdl
                         return report.PageNumber;
                     case "totalpages":
                         return report.TotalPages;
+                    case "subreportpagenumber":	// CrystalEngine
+                        return report.SubreportPageNumber;
+                    case "subreporttotalpages":	// CrystalEngine
+                        return report.SubreportFirstPage > 0 ? Report.SubreportTotalPagesMark : (object)report.TotalPages;
                     case "executiontime":
                         return report.ExecutionTime;
                     case "reportfolder":

@@ -272,6 +272,8 @@ namespace Majorsilence.Reporting.Rdl
 			_LUGlobals = new ListDictionary();	// if entries grow beyond 10; make hashtable
 			_LUGlobals.Add("PageNumber", new FunctionPageNumber());
 			_LUGlobals.Add("TotalPages", new FunctionTotalPages());
+			_LUGlobals.Add("SubreportPageNumber", new FunctionSubreportPageNumber());	// CrystalEngine
+			_LUGlobals.Add("SubreportTotalPages", new FunctionSubreportTotalPages());	// CrystalEngine
 			_LUGlobals.Add("ExecutionTime", new FunctionExecutionTime());
 			_LUGlobals.Add("ReportFolder", new FunctionReportFolder());
 			_LUGlobals.Add("ReportName", new FunctionReportName());

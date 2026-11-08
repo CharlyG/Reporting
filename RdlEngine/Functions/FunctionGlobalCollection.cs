@@ -54,6 +54,10 @@ namespace Majorsilence.Reporting.Rdl
 						return new FunctionPageNumber();
 					case "totalpages":
 						return new FunctionTotalPages();
+					case "subreportpagenumber":	// CrystalEngine
+						return new FunctionSubreportPageNumber();
+					case "subreporttotalpages":	// CrystalEngine
+						return new FunctionSubreportTotalPages();
 					case "executiontime":
 						return new FunctionExecutionTime();
 					case "reportfolder":
@@ -84,6 +88,10 @@ namespace Majorsilence.Reporting.Rdl
 					return rpt.PageNumber;
 				case "totalpages":
 					return rpt.TotalPages;
+				case "subreportpagenumber":	// CrystalEngine
+					return rpt.SubreportPageNumber;
+				case "subreporttotalpages":	// CrystalEngine
+					return rpt.SubreportFirstPage > 0 ? Report.SubreportTotalPagesMark : (object)rpt.TotalPages;
 				case "executiontime":
 					return rpt.ExecutionTime;
 				case "reportfolder":
