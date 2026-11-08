@@ -197,7 +197,36 @@ namespace Majorsilence.Reporting.Rdl
             // thickness, not its available length, so wrapping against it here would split one
             // rotated line into several that then get drawn on top of each other.
             float availableW = width - si.PaddingLeft - si.PaddingRight;
-            if (!bNoClip && availableW > 0 && si.WritingMode != WritingModeEnum.tb_rl)
+            // Which lines a justified box stretches to its right edge: every line but the last of a
+            // paragraph. A box holding one line of a longer paragraph (a report that sets each line in a
+            // box of its own) says it is not the paragraph's last by ending in a no-break space, which is
+            // not drawn; that line is not wrapped again either, its breaks being the report's.
+            bool[] stretch = null;
+            bool justified = si.TextAlign == TextAlignEnum.Justified && !bNoClip && availableW > 0
+                             && si.WritingMode == WritingModeEnum.lr_tb;
+            if (justified)
+            {
+                var lines = new List<string>();
+                var flags = new List<bool>();
+                foreach (string paragraph in RejoinSoftWraps(sa))
+                {
+                    if (paragraph.Length > 0 && paragraph[paragraph.Length - 1] == ContinuesMark)
+                    {
+                        lines.Add(paragraph.TrimEnd(ContinuesMark, ' '));
+                        flags.Add(true);
+                        continue;
+                    }
+                    string[] wrapped = RewrapLines(new[] { paragraph.TrimEnd(' ') }, baseStyle, availableW);
+                    for (int k = 0; k < wrapped.Length; k++)
+                    {
+                        lines.Add(wrapped[k]);
+                        flags.Add(k < wrapped.Length - 1);
+                    }
+                }
+                sa = lines.ToArray();
+                stretch = flags.ToArray();
+            }
+            else if (!bNoClip && availableW > 0 && si.WritingMode != WritingModeEnum.tb_rl)
                 sa = RewrapLines(RejoinSoftWraps(sa), baseStyle, availableW);
 
             // A textbox that may not grow may not draw outside its own rectangle either.
@@ -269,7 +298,13 @@ namespace Majorsilence.Reporting.Rdl
                             break;
                     }
 
-                    _currentPage.DrawText(text, startX, startY + si.FontSize, baseStyle);
+                    if (stretch != null && i < stretch.Length && stretch[i] && text.IndexOf(' ') > 0)
+                    {
+                        DrawStretched(text, startX, startY + si.FontSize, baseStyle, availableW - textwidth);
+                        textwidth = availableW;
+                    }
+                    else
+                        _currentPage.DrawText(text, startX, startY + si.FontSize, baseStyle);
 
                     float maxX = width > 0
                         ? Math.Min(x + width, startX + textwidth)
@@ -317,6 +352,33 @@ namespace Majorsilence.Reporting.Rdl
 
             AddAnnotations(x, y, height, width, url, tooltip);
             iAddBorder(si, x, y, height, width);
+        }
+
+        // Ends the text of a box that holds one line of a justified paragraph, the paragraph going on past it.
+        internal const char ContinuesMark = ' ';
+
+        // A justified line: each word where the line puts it, moved right by an equal share of the room
+        // left in the box for every space before it, so the last word ends at the box's right edge.
+        private void DrawStretched(string text, float x, float baseline, TextStyle style, float extra)
+        {
+            int spaces = 0;
+            for (int c = 0; c < text.Length; c++)
+                if (text[c] == ' ' && c > 0 && text[c - 1] != ' ') spaces++;
+            float share = spaces > 0 ? extra / spaces : 0;
+            int gaps = 0, start = 0;
+            while (start < text.Length)
+            {
+                int end = text.IndexOf(' ', start);
+                if (end < 0) end = text.Length;
+                if (end > start)
+                {
+                    float at = x + (start > 0 ? _currentPage.MeasureTextWidth(text.Substring(0, start), style) : 0) + gaps * share;
+                    _currentPage.DrawText(text.Substring(start, end - start), at, baseline, style);
+                }
+                start = end;
+                if (start < text.Length) gaps++;
+                while (start < text.Length && text[start] == ' ') start++;
+            }
         }
 
         // ── PDF-accurate text re-wrapping ─────────────────────────────────────
