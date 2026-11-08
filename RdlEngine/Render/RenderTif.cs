@@ -707,8 +707,8 @@ namespace Majorsilence.Reporting.Rdl
         private SkiaSharp.SKBitmap CreateObjectSkBitmap()
         {
             return new SkiaSharp.SKBitmap(
-                Convert.ToInt32(r.ReportDefinition.PageWidth.Size / 2540F * DpiX),
-                Convert.ToInt32(r.ReportDefinition.PageHeight.Size / 2540F * DpiY)
+                Convert.ToInt32(r.ReportDefinition.PageWidth.Size / (float)RSize.PARTS_PER_INCH * DpiX),
+                Convert.ToInt32(r.ReportDefinition.PageHeight.Size / (float)RSize.PARTS_PER_INCH * DpiY)
             );
         }
 #else
@@ -718,8 +718,8 @@ namespace Majorsilence.Reporting.Rdl
             float dpiY = 200F;
 
             Draw2.Bitmap bm = new Draw2.Bitmap(
-                Convert.ToInt32(r.ReportDefinition.PageWidth.Size / 2540F * dpiX),
-                Convert.ToInt32(r.ReportDefinition.PageHeight.Size / 2540F * dpiY)
+                Convert.ToInt32(r.ReportDefinition.PageWidth.Size / (float)RSize.PARTS_PER_INCH * dpiX),
+                Convert.ToInt32(r.ReportDefinition.PageHeight.Size / (float)RSize.PARTS_PER_INCH * dpiY)
             );
 
             bm.MakeTransparent(System.Drawing.Color.White);

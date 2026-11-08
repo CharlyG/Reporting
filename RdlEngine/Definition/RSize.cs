@@ -21,13 +21,16 @@ namespace Majorsilence.Reporting.Rdl
 	public class RSize
 	{
 
-        internal const decimal PARTS_PER_INCH = 2540;   //25.4 mm/inch
-        internal const decimal PARTS_PER_CM = 1000;     //10 mm/cm
-        internal const decimal PARTS_PER_MM = 100;
+        // CrystalEngine: 182880 parts to the inch, the smallest count that holds both a twip (1/1440in) and a
+        // hundredth of a millimetre (1/2540in) whole. At 2540 a 2pt row was 71 parts, 2.0126pt, and a page of
+        // Crystal's 40-twip gaps ran a quarter point long.
+        internal const decimal PARTS_PER_INCH = 182880;
+        internal const decimal PARTS_PER_CM = PARTS_PER_INCH / 2.54m;
+        internal const decimal PARTS_PER_MM = PARTS_PER_CM / 10;
         internal const decimal PARTS_PER_POINT = (decimal)(PARTS_PER_INCH / Majorsilence.Reporting.Rdl.Utility.Measurement.POINTSIZE_M);
         internal const decimal PARTS_PER_PICA = (decimal)(PARTS_PER_POINT * 12M);
 
-		int _Size;					// Normalized size in 1/100,000 meters
+		int _Size;					// Normalized size in parts of 1/182880 inch
 		string _Original;			// save original string for recreation of syntax
 
 		internal RSize(ReportDefn r, string t)
@@ -91,7 +94,7 @@ namespace Majorsilence.Reporting.Rdl
 				return;
 			}
 
-			// Rounded, not truncated. _Size counts parts of 1/2540 inch, and a cast to int
+			// Rounded, not truncated. _Size counts parts of an inch, and a cast to int
 			// throws the fraction away - so every dimension came out up to one part short
 			// (0.0004in, about a tenth of a pixel at 300dpi), always in the same direction.
 			// On a one-off that is invisible; on a table row it is a pitch. A 289-twip row
@@ -127,7 +130,7 @@ namespace Majorsilence.Reporting.Rdl
                     _Size = (int)decimal.Round(d * PARTS_PER_INCH);
                     break;
 			}
-			if (_Size > 160 * 2540)	// Size can't be greater than 160 inches according to spec
+			if (_Size > 160 * (int)PARTS_PER_INCH)	// Size can't be greater than 160 inches according to spec
 			{   // but RdlEngine supports higher values so just do a warning
                 if (r != null)
 				    r.rl.LogError(4, "Size '" + this._Original + "' is larger than the RDL specification maximum of 160 inches.");
@@ -162,7 +165,7 @@ namespace Majorsilence.Reporting.Rdl
 			get
 			{	// For now assume 96 dpi;  TODO: what would be better way; shouldn't use server display pixels
 				decimal p = _Size;
-				p = p / 2540m;		// get it in inches
+				p = p / PARTS_PER_INCH;		// get it in inches
 				p = p * 96;				// 
                 if (p != 0)
                     return (int) p;
@@ -204,7 +207,7 @@ namespace Majorsilence.Reporting.Rdl
 			get
 			{	// For now assume 96 dpi
 				decimal p = _Size;
-				p = p / 2540m;		// get it in inches
+				p = p / PARTS_PER_INCH;		// get it in inches
 				p = p * 96;				// 
                 if (p != 0)
                     return (int)p;
@@ -244,7 +247,7 @@ namespace Majorsilence.Reporting.Rdl
 		{
 			get
 			{	
-				return (float) ((double) _Size / 2540.0 * POINTSIZED);
+				return (float) ((double) _Size / (double)PARTS_PER_INCH * POINTSIZED);
 			}
 		}
 
